@@ -167,7 +167,15 @@ if [ "$#" -gt 0 ]; then
   fi
 fi
 
-# 7. Start supervisord to launch and monitor all background processes
+# 7. Enable/disable dynamic background removal (rembg)
+if [ "$ENABLE_REMBG" = "true" ]; then
+  echo "Enabling dynamic background removal (rembg)..."
+  ln -sf /usr/local/bin/rembg /usr/local/bin/rembg-cli
+else
+  rm -f /usr/local/bin/rembg-cli
+fi
+
+# 8. Start supervisord to launch and monitor all background processes
 echo "Launching supervisor..."
 exec supervisord -c /etc/supervisor/supervisord.conf
 

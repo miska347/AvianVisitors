@@ -68,8 +68,7 @@ COPY requirements.txt /tmp/
 COPY avian/scripts/requirements.txt /tmp/avian/scripts/
 RUN sed -i 's/rembg>=2.0.76/rembg[cli]>=2.0.50,<2.0.76/' /tmp/avian/scripts/requirements.txt && echo "filetype" >> /tmp/avian/scripts/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/avian/scripts/requirements.txt && \
-    ln -s /usr/local/bin/rembg /usr/local/bin/rembg-cli
+    pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/avian/scripts/requirements.txt
 
 
 # Copy codebase

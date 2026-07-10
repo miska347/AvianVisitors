@@ -13,6 +13,7 @@ services:
       - TZ=UTC
       - LATITUDE=0.0
       - LONGITUDE=0.0
+      - ENABLE_REMBG=false
       # - GEMINI_API_KEY=your_gemini_api_key
       # - EBIRD_API_KEY=your_ebird_api_key
     devices:
@@ -24,3 +25,4 @@ services:
     volumes:
       # Maps a local 'data' folder on the host for persistent database, recordings and configuration
       - ./data:/data
+      # - ./asound.conf:/etc/asound.conf:ro
