@@ -161,7 +161,7 @@ if [ "$#" -gt 0 ]; then
   echo "Running custom command: $*"
   # Set user home context and run as birdnet if running a test or python script
   if [ "$1" = "pytest" ] || [[ "$1" == *"python"* ]]; then
-    exec sudo -u birdnet HOME=/home/birdnet PATH=$PATH "$@"
+    exec sudo -E -u birdnet HOME=/home/birdnet PATH=$PATH "$@"
   else
     exec "$@"
   fi

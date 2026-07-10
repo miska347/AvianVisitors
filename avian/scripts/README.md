@@ -26,6 +26,29 @@ python3 cutout.py
 python3 build_masks.py
 ```
 
+### Running inside Docker (Recommended)
+
+If you are running the project inside Docker, you don't need to install any Python dependencies on your host machine. You can run the entire pipeline directly inside the container by mounting the project root:
+
+```bash
+# 1. Generate the illustrations (for example, for region FI-13)
+docker compose run --rm \
+  -v .:/home/birdnet/BirdNET-Pi \
+  -e GEMINI_API_KEY="your_gemini_api_key" \
+  -e EBIRD_API_KEY="your_ebird_api_key" \
+  avianvisitors bash -c "PYTHONPATH=scripts python3 -c 'from utils.helpers import set_label_file; set_label_file()' && python3 avian/scripts/pregen.py --labels model/labels.txt --ebird-region FI-13 --sleep 20"
+
+# 2. Remove backgrounds (BiRefNet cutout)
+docker compose run --rm \
+  -v .:/home/birdnet/BirdNET-Pi \
+  avianvisitors python3 avian/scripts/cutout.py
+
+# 3. Rebuild the collage masks
+docker compose run --rm \
+  -v .:/home/birdnet/BirdNET-Pi \
+  avianvisitors python3 avian/scripts/build_masks.py
+```
+
 `--labels` takes any `Sci|Com` per-line file (BirdNET-Pi's `labels.txt` works
 directly). `--ebird-region` filters to species actually seen in your region
 (needs `EBIRD_API_KEY`). Re-render one bird with
