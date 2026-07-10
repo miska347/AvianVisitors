@@ -1,7 +1,9 @@
 services:
-  birdnet:
+  avianvisitors:
     build: .
-    container_name: birdnet
+    # Or use the prebuilt image:
+    # image: ghcr.io/miska347/AvianVisitors:latest
+    container_name: avianvisitors
     restart: unless-stopped
     ports:
       # Maps port 80 of the host to port 80 of the container.
