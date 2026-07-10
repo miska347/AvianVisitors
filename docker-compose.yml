@@ -2,7 +2,7 @@ services:
   avianvisitors:
     build: .
     # Or use the prebuilt image:
-    # image: ghcr.io/miska347/AvianVisitors:latest
+    # image: ghcr.io/miska347/avianvisitors:avian-visitors
     container_name: avianvisitors
     restart: unless-stopped
     ports:
