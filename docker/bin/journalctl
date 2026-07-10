@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Mock journalctl to fetch logs from Supervisor output logs inside Docker
+
+SERVICE=""
+LINES=100
+FOLLOW=false
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -u|--unit)
+      SERVICE=$(echo "$2" | sed 's/\.service$//')
+      shift; shift
+      ;;
+    -n|--lines)
+      LINES=$2
+      shift; shift
+      ;;
+    -f|--follow)
+      FOLLOW=true
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$SERVICE" ]; then
+  echo "Journalctl mock: no unit specified."
+  exit 0
+fi
+
+case "$SERVICE" in
+  birdnet_analysis) LOG_FILE="/data/logs/birdnet_analysis.log" ;;
+  birdnet_recording) LOG_FILE="/data/logs/birdnet_recording.log" ;;
+  birdnet_stats) LOG_FILE="/data/logs/birdnet_stats.log" ;;
+  chart_viewer) LOG_FILE="/data/logs/chart_viewer.log" ;;
+  spectrogram_viewer) LOG_FILE="/data/logs/spectrogram_viewer.log" ;;
+  livestream) LOG_FILE="/data/logs/livestream.log" ;;
+  caddy) LOG_FILE="/data/logs/caddy.log" ;;
+  *) LOG_FILE="" ;;
+esac
+
+if [ -n "$LOG_FILE" ] && [ -f "$LOG_FILE" ]; then
+  if [ "$FOLLOW" = true ]; then
+    tail -n "$LINES" -f "$LOG_FILE"
+  else
+    tail -n "$LINES" "$LOG_FILE"
+  fi
+else
+  echo "No logs found for unit '$SERVICE'"
+fi
+exit 0

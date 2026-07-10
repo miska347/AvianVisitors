@@ -49,6 +49,7 @@ include_species_list.txt
 whitelist_species_list.txt
 /nbproject/private/
 .DS_Store
+data/
 
 # --- AvianVisitors: local-only material, deliberately not shipped ---
 # Claude Code session data
@@ -57,3 +58,7 @@ whitelist_species_list.txt
 avian/assets/references/
 # Superseded assets retained locally
 avian/assets/_legacy/
+# Local absolute symlink to BirdNET-Pi's avian directory
+avian/avian
+# Local docker-compose overrides (credentials and audio paths)
+docker-compose.override.yml

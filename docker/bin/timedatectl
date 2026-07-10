@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Mock timedatectl to safely return timezone in Docker
+
+if [[ "$*" == *"show"* ]] && [[ "$*" == *"Timezone"* ]]; then
+  # Try to read /etc/timezone, fallback to TZ or UTC
+  cat /etc/timezone 2>/dev/null || echo "${TZ:-UTC}"
+else
+  # Default output if run without arguments or other queries
+  echo "Local time: $(date)"
+  echo "Universal time: $(date -u)"
+  echo "RTC time: n/a"
+  echo "Time zone: $(cat /etc/timezone 2>/dev/null || echo "${TZ:-UTC}")"
+  echo "System clock synchronized: yes"
+  echo "NTP service: active"
+  echo "RTC in local TZ: no"
+fi
+exit 0

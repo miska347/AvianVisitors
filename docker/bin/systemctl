@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Mock systemctl to translate systemd service commands to supervisorctl actions inside Docker
+
+ACTION=""
+UNIT=""
+VALUE_ONLY=false
+PROPERTY=""
+
+# Parse arguments properly
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    is-active|is-enabled|start|stop|restart|reload-or-restart|enable|disable|status|cat|show)
+      ACTION="$1"
+      shift
+      ;;
+    -p|--property)
+      PROPERTY="$2"
+      shift; shift
+      ;;
+    --value)
+      VALUE_ONLY=true
+      shift
+      ;;
+    -*)
+      # Ignore other flags
+      shift
+      ;;
+    *)
+      # The remaining argument is likely the unit name
+      UNIT="$1"
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$ACTION" ]; then
+  echo "Systemctl mock: no action specified"
+  exit 1
+fi
+
+# Clean up unit name (remove .service suffix)
+UNIT_NAME=$(echo "$UNIT" | sed 's/\.service$//')
+
+# Map systemd service names to supervisor program names
+case "$UNIT_NAME" in
+  birdnet_recording) PROGRAM="birdnet_recording" ;;
+  birdnet_analysis) PROGRAM="birdnet_analysis" ;;
+  birdnet_log) PROGRAM="birdnet_log" ;;
+  birdnet_stats) PROGRAM="birdnet_stats" ;;
+  spectrogram_viewer) PROGRAM="spectrogram_viewer" ;;
+  livestream) PROGRAM="livestream" ;;
+  chart_viewer) PROGRAM="chart_viewer" ;;
+  icecast2) PROGRAM="icecast2" ;;
+  caddy) PROGRAM="caddy" ;;
+  php8.4-fpm|php8.3-fpm|php8.2-fpm|php-fpm) PROGRAM="php-fpm" ;;
+  *) PROGRAM="" ;;
+esac
+
+# If the program is not mapped but it's one of the whitelisted units
+if [ -z "$PROGRAM" ]; then
+  case "$UNIT_NAME" in
+    birdnet_recording|birdnet_analysis|birdnet_log|birdnet_stats|spectrogram_viewer|livestream|chart_viewer|icecast2|caddy|php*)
+      # Whitelisted but not active in this container
+      ;;
+    *)
+      # Not in whitelist
+      if [ "$ACTION" = "cat" ]; then
+        exit 1
+      fi
+      echo "inactive"
+      exit 0
+      ;;
+  esac
+fi
+
+case "$ACTION" in
+  is-active)
+    if [ -n "$PROGRAM" ]; then
+      STATUS=$(supervisorctl status "$PROGRAM" 2>/dev/null | awk '{print $2}')
+      if [ "$STATUS" = "RUNNING" ]; then
+        echo "active"
+      else
+        echo "inactive"
+      fi
+    else
+      echo "inactive"
+    fi
+    ;;
+  is-enabled)
+    echo "enabled"
+    ;;
+  status)
+    if [ -n "$PROGRAM" ]; then
+      STATUS=$(supervisorctl status "$PROGRAM" 2>/dev/null | awk '{print $2}')
+      if [ "$STATUS" = "RUNNING" ]; then
+        echo "Active: active (running)"
+      else
+        echo "Active: inactive (dead)"
+      fi
+    else
+      echo "Active: inactive (dead)"
+    fi
+    ;;
+  cat)
+    # Exist 0 for whitelisted units
+    exit 0
+    ;;
+  show)
+    # E.g. systemctl show -p ActiveEnterTimestamp --value <unit>
+    if [ "$PROPERTY" = "ActiveEnterTimestamp" ]; then
+      TIMESTAMP=$(date -d "1 hour ago" "+%a %Y-%m-%d %H:%M:%S %Z" 2>/dev/null || date "+%a %Y-%m-%d %H:%M:%S %Z")
+      if [ "$VALUE_ONLY" = true ]; then
+        echo "$TIMESTAMP"
+      else
+        echo "ActiveEnterTimestamp=$TIMESTAMP"
+      fi
+    else
+      if [ "$VALUE_ONLY" = true ]; then
+        echo ""
+      else
+        echo "$PROPERTY="
+      fi
+    fi
+    ;;
+  start)
+    [ -n "$PROGRAM" ] && supervisorctl start "$PROGRAM"
+    ;;
+  stop)
+    [ -n "$PROGRAM" ] && supervisorctl stop "$PROGRAM"
+    ;;
+  restart|reload-or-restart)
+    [ -n "$PROGRAM" ] && supervisorctl restart "$PROGRAM"
+    ;;
+  enable)
+    # autostart is managed in supervisor config
+    ;;
+  disable)
+    # autostart is managed in supervisor config
+    ;;
+  *)
+    echo "Systemctl mock: unsupported action '$ACTION'"
+    exit 0
+    ;;
+esac
+exit 0

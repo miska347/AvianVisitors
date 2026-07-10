@@ -56,6 +56,46 @@ Collage: `http://birdnet.local/`. Stock BirdNET-Pi UI: `http://birdnet.local/ind
 
 ---
 
+## 2b. (Alternative) Run in Docker
+
+If you prefer to run the entire application or the python script environment inside a Docker container without installing dependencies on your host device, you can use the provided Docker setup.
+
+### Prerequisites
+- Docker and Docker Compose installed on the host.
+- For audio recording, ensure the container has access to the audio hardware (configured by default in `docker-compose.yml` via `--device /dev/snd`).
+
+### Running the entire BirdNET-Pi / AvianVisitors Web UI
+To build and run the web UI and all backend services (PHP, Caddy, Python analyzer, and Streamlit):
+
+```bash
+# Build and start in the background
+docker compose up -d --build
+```
+
+Access the interface at `http://localhost`. All recordings, configuration, logs, and the database will be stored persistently in a `./data` folder in the project directory.
+
+### Running Pipeline Scripts inside Docker
+If you just want to run the illustration generator scripts (e.g. `pregen.py`, `cutout.py`, etc.) in the container and map the results back to your host workspace:
+
+```bash
+# Build the image
+docker compose build
+
+# Run pregen, cutout, and build_masks inside the container
+docker compose run --rm -e GEMINI_API_KEY="your-key" birdnet python3 avian/scripts/pregen.py --labels model/labels.txt --ebird-region US-CA
+docker compose run --rm birdnet python3 avian/scripts/cutout.py
+docker compose run --rm birdnet python3 avian/scripts/build_masks.py
+```
+
+### Running Tests
+To run the project test suite inside the container:
+
+```bash
+docker compose run --rm birdnet pytest
+```
+
+---
+
 ## 3. (Optional) Restyle the illustrations
 
 The repo ships with 498 bundled illustrations (249 species, perched + flight). To restyle them or generate a set for your own region:

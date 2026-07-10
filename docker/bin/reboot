@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Mock reboot script to prevent container crashes and advise how to restart the container
+
+echo "Reboot command intercepted. Please restart the Docker container to complete system changes."
+exit 0

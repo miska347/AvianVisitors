@@ -5,6 +5,7 @@ import re
 import signal
 import sys
 import threading
+import time
 from queue import Queue
 from subprocess import CalledProcessError
 
@@ -20,6 +21,9 @@ from utils.reporting import extract_detection, summary, write_to_file, write_to_
 shutdown = False
 
 log = logging.getLogger(__name__)
+
+processed_files = []
+processed_files_lock = threading.Lock()
 
 
 def sig_handler(sig_num, curr_stack_frame):
@@ -80,8 +84,39 @@ def main():
     report_queue.join()
 
 
+def is_file_growing(file_name):
+    try:
+        if not os.path.exists(file_name):
+            return False
+        size1 = os.path.getsize(file_name)
+        time.sleep(0.2)
+        if not os.path.exists(file_name):
+            return False
+        size2 = os.path.getsize(file_name)
+        return size2 > size1
+    except OSError:
+        return False
+
+
 def process_file(file_name, report_queue):
     try:
+        with processed_files_lock:
+            if file_name in processed_files:
+                return
+            processed_files.append(file_name)
+            if len(processed_files) > 100:
+                processed_files.pop(0)
+
+        if not os.path.exists(file_name):
+            return
+        if is_file_growing(file_name):
+            log.debug('File %s is still growing, skipping for now', file_name)
+            with processed_files_lock:
+                if file_name in processed_files:
+                    processed_files.remove(file_name)
+            return
+        if not os.path.exists(file_name):
+            return
         if os.path.getsize(file_name) == 0:
             os.remove(file_name)
             return
